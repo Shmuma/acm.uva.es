@@ -55,6 +55,9 @@ void next_step (int *x, int *y, int *dir, unsigned long long *got, int *ttl)
     printf ("Step %d: (%d,%d), dir = %d, ttl = %d, score = %d\n", step++, 1 + *x, 1 + *y, *dir, *ttl, *got);
 #endif
 
+    (*ttl)--;
+    if (*ttl <= 0)
+        return;
     xx += inc_x[*dir];
     yy += inc_y[*dir];
 
@@ -94,17 +97,6 @@ int main(int argc, char *argv[])
     max_x--;
     max_y--;
 
-    if (p) {
-        while (p--) {
-            scanf ("%d %d %d %d", &x, &y, &val, &cost);
-            x--;
-            y--;
-            bumps[x][y] = 1;
-            values[x][y] = val;
-            costs[x][y] = cost;
-        }
-    }
-
     /* Create walls */
     for (i = 0; i <= max_x; i++) {
         bumps[i][0] = bumps[i][max_y] = 2;
@@ -118,6 +110,17 @@ int main(int argc, char *argv[])
         costs[0][i] = costs[max_x][i] = wall_cost;
     }
 
+    if (p) {
+        while (p--) {
+            scanf ("%d %d %d %d", &x, &y, &val, &cost);
+            x--;
+            y--;
+            bumps[x][y] = 1;
+            values[x][y] = val;
+            costs[x][y] = cost;
+        }
+    }
+
     while (scanf ("%d %d %d %d", &x, &y, &dir, &ttl) == 4) {
         got = 0;
         x--;
@@ -127,9 +130,7 @@ int main(int argc, char *argv[])
         printf ("\nNew ball @(%d,%d), dir = %d, ttl = %d\n", x+1, y+1, dir, ttl);
 #endif
 
-        while (ttl--) {
-            if (!ttl)
-                break;
+        while (ttl > 0) {
             next_step (&x, &y, &dir, &got, &ttl);
             if (ttl <= 0)
                 break;

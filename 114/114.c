@@ -1,10 +1,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define NO_DEBUG
+#define DEBUG
 
 int max_x, max_y;
-int wall_cost;
 
 int bumps[60][60];
 int values[60][60];
@@ -25,6 +24,33 @@ int rotate (int dir)
         return 2;
     }
 }
+
+#ifndef DEBUG
+void show_field (int x, int y, int xx, int yy, int dir, int score, int ttl)
+{
+}
+#else
+void show_field (int x, int y, int xx, int yy, int dir, int score, int ttl)
+{
+    int i, j;
+
+    for (i = max_y; i >= 0; i--) {
+        for (j = 0; j <= max_x; j++) {
+            if (j == x && i == y)
+                putchar ('@');
+            else
+                if (j == xx && i == yy)
+                    putchar ('_');
+            else
+                if (bumps[j][i])
+                    putchar (values[j][i] ? '*' : '#');
+                else
+                    putchar ('.');
+        }
+        putchar('\n');
+    }
+}
+#endif
 
 
 void next_step (int *x, int *y, int *dir, int *got, int *ttl)
@@ -50,6 +76,8 @@ void next_step (int *x, int *y, int *dir, int *got, int *ttl)
         break;
     }
 
+    show_field (*x, *y, xx, yy, *dir, *got, *ttl);
+
     /* We'll hit bump */
     if (bumps[xx][yy]) {
         *ttl -= costs[xx][yy];
@@ -72,7 +100,7 @@ void next_step (int *x, int *y, int *dir, int *got, int *ttl)
 
 int main(int argc, char *argv[])
 {
-    int p, x, y, val, cost, dir, ttl;
+    int p, x, y, val, cost, dir, ttl, wall_cost;
     int score = 0, got;
     int i;
 
@@ -106,6 +134,10 @@ int main(int argc, char *argv[])
         got = 0;
         x--;
         y--;
+
+#ifdef DEBUG
+        printf ("\nNew ball @(%d,%d), dir = %d, ttl = %d\n", x, y, dir, ttl);
+#endif
 
         while (ttl--) {
             if (!ttl)

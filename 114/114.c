@@ -1,7 +1,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define DEBUG
+#define NDEBUG
 
 int max_x, max_y;
 
@@ -10,26 +10,20 @@ int values[60][60];
 int costs[60][60];
 int step;
 
+const int rotate[4] = {
+    3, 0, 1, 2
+};
 
-int rotate (int dir)
-{
-    switch (dir) {
-    case 0:
-        return 3;
-    case 1:
-        return 0;
-    case 2:
-        return 1;
-    case 3:
-        return 2;
-    }
-}
+const int inc_x[4] = {
+    1, 0, -1, 0
+};
 
-#ifndef DEBUG
-void show_field (int x, int y, int xx, int yy, int dir, int score, int ttl)
-{
-}
-#else
+const int inc_y[4] = {
+    0, 1, 0, -1
+};
+
+
+#ifdef DEBUG
 void show_field (int x, int y, int xx, int yy, int dir, int score, int ttl)
 {
     int i, j;
@@ -43,7 +37,7 @@ void show_field (int x, int y, int xx, int yy, int dir, int score, int ttl)
                     putchar ('_');
             else
                 if (bumps[j][i])
-                    putchar (values[j][i] ? '*' : '#');
+                    putchar (bumps[j][i] == 1 ? '*' : '#');
                 else
                     putchar ('.');
         }
@@ -53,45 +47,35 @@ void show_field (int x, int y, int xx, int yy, int dir, int score, int ttl)
 #endif
 
 
-void next_step (int *x, int *y, int *dir, int *got, int *ttl)
+void next_step (int *x, int *y, int *dir, unsigned long long *got, int *ttl)
 {
     int xx = *x, yy = *y;
     
 #ifdef DEBUG
-    printf ("Step %d: (%d,%d), dir = %d, ttl = %d, score = %d\n", step++, *x, *y, *dir, *ttl, *got);
+    printf ("Step %d: (%d,%d), dir = %d, ttl = %d, score = %d\n", step++, 1 + *x, 1 + *y, *dir, *ttl, *got);
 #endif
 
-    switch (*dir) {
-    case 0:
-        xx++;
-        break;
-    case 1:
-        yy++;
-        break;
-    case 2:
-        xx--;
-        break;
-    case 3:
-        yy--;
-        break;
-    }
+    xx += inc_x[*dir];
+    yy += inc_y[*dir];
 
+#ifdef DEBUG
     show_field (*x, *y, xx, yy, *dir, *got, *ttl);
+#endif
 
-    /* We'll hit bump */
+    /* We'll hit bump or wall */
     if (bumps[xx][yy]) {
         *ttl -= costs[xx][yy];
         if (*ttl > 0)
             *got += values[xx][yy];
-        *dir = rotate (*dir);
+        *dir = rotate [*dir];
 #ifdef DEBUG
-        printf ("Hit bump at %d,%d. New ttl = %d, dir = %d, score = %d\n", xx, yy, *ttl, *dir, *got);
+        printf ("Hit bump at %d,%d. New ttl = %d, dir = %d, score = %d\n", xx+1, yy+1, *ttl, *dir, *got);
 #endif
         return;
     }
 
 #ifdef DEBUG
-    printf ("Don't hit anything, new coord (%d,%d)\n", xx, yy);
+    printf ("Don't hit anything, new coord (%d,%d)\n", xx+1, yy+1);
 #endif
     *x = xx;
     *y = yy;
@@ -101,7 +85,7 @@ void next_step (int *x, int *y, int *dir, int *got, int *ttl)
 int main(int argc, char *argv[])
 {
     int p, x, y, val, cost, dir, ttl, wall_cost;
-    int score = 0, got;
+    unsigned long long score = 0, got;
     int i;
 
     scanf ("%d %d %d", &max_x, &max_y, &wall_cost);
@@ -110,22 +94,26 @@ int main(int argc, char *argv[])
     max_x--;
     max_y--;
 
-    while (p--) {
-        scanf ("%d %d %d %d", &x, &y, &val, &cost);
-        bumps[x-1][y-1] = val;
-        values[x-1][y-1] = val;
-        costs[x-1][y-1] = cost;
+    if (p) {
+        while (p--) {
+            scanf ("%d %d %d %d", &x, &y, &val, &cost);
+            x--;
+            y--;
+            bumps[x][y] = 1;
+            values[x][y] = val;
+            costs[x][y] = cost;
+        }
     }
 
     /* Create walls */
     for (i = 0; i <= max_x; i++) {
-        bumps[i][0] = bumps[i][max_y] = 1;
+        bumps[i][0] = bumps[i][max_y] = 2;
         values[i][0] = values[i][max_y] = 0;
         costs[i][0] = costs[i][max_y] = wall_cost;
     }
 
     for (i = 0; i <= max_y; i++) {
-        bumps[0][i] = bumps[max_x][i] = 1;
+        bumps[0][i] = bumps[max_x][i] = 2;
         values[0][i] = values[max_x][i] = 0;
         costs[0][i] = costs[max_x][i] = wall_cost;
     }
@@ -136,7 +124,7 @@ int main(int argc, char *argv[])
         y--;
 
 #ifdef DEBUG
-        printf ("\nNew ball @(%d,%d), dir = %d, ttl = %d\n", x, y, dir, ttl);
+        printf ("\nNew ball @(%d,%d), dir = %d, ttl = %d\n", x+1, y+1, dir, ttl);
 #endif
 
         while (ttl--) {
@@ -148,9 +136,9 @@ int main(int argc, char *argv[])
         }
 
         score += got;
-        printf ("%d\n", got);
+        printf ("%llu\n", got);
     }
 
-    printf ("%d\n", score);
+    printf ("%llu\n", score);
     return 0;
 }
